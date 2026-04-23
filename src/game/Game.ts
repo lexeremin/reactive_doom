@@ -281,14 +281,14 @@ export class Game {
         if (pickup.getType() === 'health') {
           const before = this.player.getHealth();
           this.player.heal(pickup.getAmount());
+          pickup.collect();
           if (this.player.getHealth() > before) {
-            pickup.collect();
             this.setMessage('Health picked up', 1.2);
           }
         } else if (pickup.getType() === 'ammo') {
           const gained = this.weapon.addAmmo(pickup.getAmount());
+          pickup.collect();
           if (gained > 0) {
-            pickup.collect();
             this.setMessage('Ammo picked up', 1.2);
           }
         } else {
@@ -378,12 +378,15 @@ export class Game {
       .sort((a, b) => b.distance - a.distance);
 
     for (const item of items) {
-      const screenX = ((item.relative + fov / 2) / fov) * width;
-      const size = Math.max(10, Math.min(height * 0.16, height / (item.distance * 2.1)));
+      const correctedDistance = item.distance * Math.cos(item.relative);
+      if (correctedDistance <= 0.05) continue;
+
+      const screenX = width / 2 + Math.tan(item.relative) / Math.tan(fov / 2) * (width / 2);
+      const size = Math.max(10, Math.min(height * 0.22, height / correctedDistance * 0.38));
       const left = screenX - size / 2;
       const top = height / 2 - size / 2 + 12;
       const centerRay = Math.floor((screenX / width) * rays);
-      if (centerRay < 0 || centerRay >= zBuffer.length || item.distance > zBuffer[centerRay] + 0.1) continue;
+      if (centerRay < 0 || centerRay >= zBuffer.length || correctedDistance > zBuffer[centerRay] + 0.1) continue;
 
       if (item.pickup.getType() === 'health') {
         ctx.fillStyle = '#5fd36f';
