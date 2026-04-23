@@ -45,16 +45,9 @@ function App() {
 
       <div className="overlay top-right">
         <div>LEVEL {ui.level}/{ui.levelCount}</div>
-        <div>HP {ui.health}</div>
-        <div>AMMO {ui.ammo}/{ui.maxAmmo}</div>
         <div>KILLS {ui.score}</div>
-        <div>KEY {ui.hasKey ? 'YES' : 'NO'}</div>
         <div>STATE {ui.status.toUpperCase()}</div>
       </div>
-
-      <button className="shoot-btn" onClick={() => gameRef.current?.shoot()} disabled={ui.status !== 'playing'}>
-        SHOOT
-      </button>
 
       {ui.status !== 'playing' && (
         <div className="menu-backdrop">

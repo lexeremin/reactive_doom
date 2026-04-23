@@ -56,31 +56,6 @@ html, body, #root {
   font-size: 12px;
 }
 
-.shoot-btn {
-  position: absolute;
-  right: 18px;
-  bottom: 82px;
-  z-index: 2;
-  border: 2px solid #d3a65a;
-  background: linear-gradient(#8f2e2e, #501414);
-  color: #f8e5bb;
-  font: inherit;
-  font-weight: bold;
-  padding: 12px 18px;
-  cursor: pointer;
-  image-rendering: pixelated;
-  box-shadow: 4px 4px 0 #000;
-}
-
-.shoot-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.shoot-btn:active:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 #000;
-}
 
 .menu-backdrop {
   position: absolute;

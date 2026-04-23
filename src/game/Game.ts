@@ -23,6 +23,7 @@ export class Game {
   private keys: Record<string, boolean> = {};
   private pickups: Pickup[] = [];
   private lastShotFlash = 0;
+  private weaponKick = 0;
   private score = 0;
   private status: GameStatus = 'menu';
   private onStateChange?: () => void;
@@ -97,6 +98,7 @@ export class Game {
     this.player = new Player(level.start.x, level.start.y, level.start.angle);
     this.weapon = new Weapon();
     this.lastShotFlash = 0;
+    this.weaponKick = 0;
     this.message = '';
     this.messageTimer = 0;
     this.enemies = level.enemies.map((enemy) => new Enemy(enemy.x, enemy.y, enemy.type));
@@ -270,6 +272,7 @@ export class Game {
 
     this.player.update(dt, this.keys, this.map);
     this.lastShotFlash = Math.max(0, this.lastShotFlash - dt * 4);
+    this.weaponKick = Math.max(0, this.weaponKick - dt * 5);
     this.messageTimer = Math.max(0, this.messageTimer - dt);
     if (this.messageTimer === 0 && this.message) this.message = '';
 
@@ -534,32 +537,82 @@ export class Game {
   }
 
   private renderWeapon(ctx: CanvasRenderingContext2D, width: number, height: number) {
-    const bob = Math.sin(performance.now() / 130) * 4;
-    const flash = this.lastShotFlash > 0 ? '#f8dc74' : '#d7d0c4';
-    const gunX = width / 2 - 80;
-    const gunY = height - 120 + bob;
+    const time = performance.now();
+    const bobX = Math.sin(time / 180) * 2;
+    const bobY = Math.sin(time / 130) * 3;
+    const kick = this.weaponKick * 18;
+    const gunX = width / 2 - 52 + bobX;
+    const gunY = height - 176 + bobY + kick;
+    const flash = this.lastShotFlash > 0;
 
-    ctx.fillStyle = '#3b3430';
-    ctx.fillRect(gunX + 25, gunY + 10, 110, 56);
-    ctx.fillStyle = flash;
-    ctx.fillRect(gunX + 100, gunY + 0, 26, 24);
-    ctx.fillStyle = '#7c746d';
-    ctx.fillRect(gunX + 10, gunY + 36, 80, 44);
+    ctx.fillStyle = '#c7b097';
+    ctx.beginPath();
+    ctx.moveTo(gunX + 22, gunY + 132);
+    ctx.lineTo(gunX + 42, gunY + 108);
+    ctx.lineTo(gunX + 62, gunY + 124);
+    ctx.lineTo(gunX + 46, gunY + 154);
+    ctx.lineTo(gunX + 24, gunY + 150);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#6f4e39';
+    ctx.beginPath();
+    ctx.moveTo(gunX + 36, gunY + 120);
+    ctx.lineTo(gunX + 56, gunY + 94);
+    ctx.lineTo(gunX + 72, gunY + 108);
+    ctx.lineTo(gunX + 56, gunY + 136);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#2b2b2f';
+    ctx.fillRect(gunX + 48, gunY + 88, 26, 38);
+
+    ctx.beginPath();
+    ctx.ellipse(gunX + 61, gunY + 84, 18, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#17171a';
+    ctx.fillRect(gunX + 56, gunY + 10, 10, 84);
+
+    ctx.fillStyle = '#34343a';
+    ctx.fillRect(gunX + 58, gunY + 10, 6, 84);
+
+    ctx.fillStyle = '#101012';
+    ctx.fillRect(gunX + 44, gunY + 102, 36, 10);
+
+    ctx.fillStyle = '#0e0e10';
+    ctx.fillRect(gunX + 59, gunY + 4, 4, 10);
+
+    if (flash) {
+      ctx.fillStyle = `rgba(248, 220, 116, ${0.35 + this.lastShotFlash * 0.55})`;
+      ctx.beginPath();
+      ctx.moveTo(gunX + 61, gunY - 2);
+      ctx.lineTo(gunX + 73, gunY - 14);
+      ctx.lineTo(gunX + 80, gunY - 2);
+      ctx.lineTo(gunX + 94, gunY - 8);
+      ctx.lineTo(gunX + 84, gunY + 6);
+      ctx.lineTo(gunX + 96, gunY + 16);
+      ctx.lineTo(gunX + 78, gunY + 12);
+      ctx.lineTo(gunX + 72, gunY + 24);
+      ctx.lineTo(gunX + 64, gunY + 12);
+      ctx.lineTo(gunX + 46, gunY + 16);
+      ctx.lineTo(gunX + 54, gunY + 4);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
 
   private renderHud(ctx: CanvasRenderingContext2D, width: number, height: number) {
     ctx.fillStyle = 'rgba(16,12,12,0.9)';
-    ctx.fillRect(0, height - 68, width, 68);
+    ctx.fillRect(0, height - 52, width, 52);
     ctx.strokeStyle = '#8f6f4a';
-    ctx.strokeRect(0, height - 68, width, 68);
+    ctx.strokeRect(0, height - 52, width, 52);
 
     ctx.fillStyle = '#f2e7cf';
     ctx.font = 'bold 18px monospace';
-    ctx.fillText(`LVL ${this.levelIndex + 1}/${this.levelCount}`, 22, height - 25);
-    ctx.fillText(`HP ${String(this.player.getHealth()).padStart(3, '0')}`, 130, height - 25);
-    ctx.fillText(`AMMO ${String(this.weapon.getAmmo()).padStart(3, '0')}`, 280, height - 25);
-    ctx.fillText(`KILLS ${String(this.score).padStart(2, '0')}`, 470, height - 25);
-    ctx.fillText(`KEY ${this.player.getHasKey() ? 'YES' : 'NO'}`, 620, height - 25);
+    ctx.fillText(`HP ${String(this.player.getHealth()).padStart(3, '0')}`, 22, height - 18);
+    ctx.fillText(`KEY ${this.player.getHasKey() ? 'YES' : 'NO'}`, width / 2 - 40, height - 18);
+    ctx.fillText(`AMMO ${String(this.weapon.getAmmo()).padStart(3, '0')}`, width - 180, height - 18);
 
     if (this.message) {
       ctx.fillStyle = 'rgba(20, 12, 8, 0.88)';
@@ -586,6 +639,7 @@ export class Game {
 
     this.sound.play('shoot');
     this.lastShotFlash = 1;
+    this.weaponKick = 1;
 
     const alive = this.enemies.filter((enemy) => enemy.isAlive());
     let best: { enemy: Enemy; distance: number; angleDiff: number } | null = null;
