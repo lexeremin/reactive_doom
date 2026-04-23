@@ -5,12 +5,6 @@ import { Enemy } from './enemy';
 import { Weapon } from './weapon';
 import { MAP, getMapDimensions } from './map';
 
-const WALL_COLORS: Record<number, string> = {
-  1: '#78624a',
-  2: '#4e7a61',
-  3: '#7a4f4f',
-};
-
 type GameStatus = 'menu' | 'playing' | 'paused' | 'dead' | 'won';
 
 export class Game {
@@ -24,13 +18,52 @@ export class Game {
   private score = 0;
   private status: GameStatus = 'menu';
   private onStateChange?: () => void;
+  private wallTextures: Record<number, HTMLCanvasElement>;
 
   constructor(onStateChange?: () => void) {
     this.engine = new GameEngine('gameCanvas');
     this.raycaster = new Raycaster(MAP, getMapDimensions(MAP).width, getMapDimensions(MAP).height);
     this.onStateChange = onStateChange;
+    this.wallTextures = this.createWallTextures();
     this.resetWorld();
     this.setupInput();
+  }
+
+  private createWallTextures() {
+    const makeTexture = (base: string, dark: string, accent: string) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 32;
+      canvas.height = 32;
+      const ctx = canvas.getContext('2d')!;
+
+      ctx.fillStyle = base;
+      ctx.fillRect(0, 0, 32, 32);
+
+      for (let y = 0; y < 32; y += 8) {
+        for (let x = 0; x < 32; x += 8) {
+          ctx.fillStyle = (x + y) % 16 === 0 ? dark : base;
+          ctx.fillRect(x, y, 8, 8);
+        }
+      }
+
+      ctx.fillStyle = accent;
+      for (let i = 0; i < 32; i += 4) {
+        ctx.fillRect(i, 0, 1, 32);
+      }
+
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      for (let i = 0; i < 32; i += 8) {
+        ctx.fillRect(0, i, 32, 1);
+      }
+
+      return canvas;
+    };
+
+    return {
+      1: makeTexture('#78624a', '#5d4b38', '#9d805e'),
+      2: makeTexture('#4e7a61', '#365744', '#76a98a'),
+      3: makeTexture('#7a4f4f', '#5d3939', '#ab6a6a'),
+    };
   }
 
   private resetWorld() {
@@ -189,15 +222,18 @@ export class Game {
       zBuffer[i] = corrected;
 
       const wallHeight = Math.min(height, height / Math.max(corrected, 0.0001));
-      const x = (i / rays) * width;
-      const colW = width / rays + 1;
-      const top = (height - wallHeight) / 2;
-      const shade = Math.max(0.28, 1 - corrected / 12) * (hit.side === 1 ? 0.82 : 1);
-      const color = WALL_COLORS[MAP[Math.floor(hit.hitY)]?.[Math.floor(hit.hitX)] || 1];
+      const x = Math.floor((i / rays) * width);
+      const colW = Math.ceil(width / rays);
+      const top = Math.floor((height - wallHeight) / 2);
+      const textureId = MAP[Math.floor(hit.hitY)]?.[Math.floor(hit.hitX)] || 1;
+      const texture = this.wallTextures[textureId] || this.wallTextures[1];
+      const hitOffset = hit.side === 0 ? hit.hitY % 1 : hit.hitX % 1;
+      const texX = Math.max(0, Math.min(31, Math.floor(hitOffset * 32)));
 
-      ctx.fillStyle = this.shadeColor(color, shade);
-      ctx.fillRect(x, top, colW, wallHeight);
-      ctx.fillStyle = `rgba(0,0,0,${Math.min(0.7, corrected / 18)})`;
+      ctx.drawImage(texture, texX, 0, 1, 32, x, top, colW, wallHeight);
+
+      const shade = Math.min(0.72, corrected / 14) + (hit.side === 1 ? 0.12 : 0);
+      ctx.fillStyle = `rgba(0,0,0,${shade})`;
       ctx.fillRect(x, top, colW, wallHeight);
     }
 
@@ -273,14 +309,6 @@ export class Game {
     ctx.moveTo(width / 2, height / 2 - 10);
     ctx.lineTo(width / 2, height / 2 + 10);
     ctx.stroke();
-  }
-
-  private shadeColor(hex: string, mult: number) {
-    const value = hex.replace('#', '');
-    const r = Math.round(parseInt(value.slice(0, 2), 16) * mult);
-    const g = Math.round(parseInt(value.slice(2, 4), 16) * mult);
-    const b = Math.round(parseInt(value.slice(4, 6), 16) * mult);
-    return `rgb(${r}, ${g}, ${b})`;
   }
 
   shoot() {
