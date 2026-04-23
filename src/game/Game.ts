@@ -465,20 +465,71 @@ export class Game {
       .sort((a, b) => b.distance - a.distance);
 
     for (const sprite of sprites) {
-      const screenX = ((sprite.relative + fov / 2) / fov) * width;
-      const size = Math.max(18, Math.min(height * 0.6, height / sprite.distance));
-      const left = screenX - size / 2;
-      const top = height / 2 - size / 2;
-      const centerRay = Math.floor((screenX / width) * rays);
-      if (centerRay < 0 || centerRay >= zBuffer.length || sprite.distance > zBuffer[centerRay] + 0.2) continue;
+      const correctedDistance = sprite.distance * Math.cos(sprite.relative);
+      if (correctedDistance <= 0.05) continue;
 
-      const fill = sprite.enemy.getType() === 'demon' ? '#d64a2f' : sprite.enemy.getType() === 'soldier' ? '#80929a' : '#b54848';
-      ctx.fillStyle = fill;
-      ctx.fillRect(left, top, size, size);
+      const screenX = width / 2 + Math.tan(sprite.relative) / Math.tan(fov / 2) * (width / 2);
+      const size = Math.max(22, Math.min(height * 0.68, height / correctedDistance * 0.72));
+      const left = screenX - size / 2;
+      const top = height / 2 - size * 0.58;
+      const centerRay = Math.floor((screenX / width) * rays);
+      if (centerRay < 0 || centerRay >= zBuffer.length || correctedDistance > zBuffer[centerRay] + 0.15) continue;
+
+      const type = sprite.enemy.getType();
+      const palette = type === 'demon'
+        ? { body: '#c53b24', chest: '#e06a3b', limb: '#7f2018', eye: '#ffd36b', horn: '#f0ddc0' }
+        : type === 'soldier'
+          ? { body: '#768894', chest: '#9baab2', limb: '#4e5961', eye: '#ef5a43', horn: '#d8d8d8' }
+          : { body: '#8f2f39', chest: '#c44b58', limb: '#5a1821', eye: '#ffb45c', horn: '#d9c4a3' };
+
+      const flash = sprite.enemy.getHitFlash();
+      ctx.fillStyle = flash > 0 ? '#f6d9b8' : palette.body;
+      ctx.fillRect(left + size * 0.26, top + size * 0.2, size * 0.48, size * 0.52);
+
+      ctx.fillStyle = flash > 0 ? '#fff3df' : palette.chest;
+      ctx.fillRect(left + size * 0.32, top + size * 0.34, size * 0.36, size * 0.22);
+
+      ctx.fillStyle = flash > 0 ? '#f1c8b1' : palette.limb;
+      ctx.fillRect(left + size * 0.16, top + size * 0.28, size * 0.12, size * 0.34);
+      ctx.fillRect(left + size * 0.72, top + size * 0.28, size * 0.12, size * 0.34);
+      ctx.fillRect(left + size * 0.3, top + size * 0.72, size * 0.12, size * 0.22);
+      ctx.fillRect(left + size * 0.58, top + size * 0.72, size * 0.12, size * 0.22);
+
+      ctx.fillStyle = flash > 0 ? '#fff6e8' : palette.body;
+      ctx.fillRect(left + size * 0.3, top + size * 0.02, size * 0.4, size * 0.28);
+
+      ctx.fillStyle = palette.horn;
+      if (type !== 'soldier') {
+        ctx.beginPath();
+        ctx.moveTo(left + size * 0.34, top + size * 0.08);
+        ctx.lineTo(left + size * 0.28, top - size * 0.03);
+        ctx.lineTo(left + size * 0.4, top + size * 0.06);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(left + size * 0.66, top + size * 0.08);
+        ctx.lineTo(left + size * 0.72, top - size * 0.03);
+        ctx.lineTo(left + size * 0.6, top + size * 0.06);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#3c444b';
+        ctx.fillRect(left + size * 0.26, top + size * 0.04, size * 0.48, size * 0.06);
+      }
+
+      ctx.fillStyle = palette.eye;
+      ctx.fillRect(left + size * 0.38, top + size * 0.12, size * 0.08, size * 0.06);
+      ctx.fillRect(left + size * 0.54, top + size * 0.12, size * 0.08, size * 0.06);
+
       ctx.fillStyle = '#1a1010';
-      ctx.fillRect(left + size * 0.2, top + size * 0.25, size * 0.18, size * 0.18);
-      ctx.fillRect(left + size * 0.62, top + size * 0.25, size * 0.18, size * 0.18);
-      ctx.fillRect(left + size * 0.3, top + size * 0.66, size * 0.4, size * 0.12);
+      ctx.fillRect(left + size * 0.4, top + size * 0.22, size * 0.2, size * 0.05);
+
+      const healthRatio = Math.max(0, sprite.enemy.getHealth()) / (type === 'demon' ? 95 : type === 'soldier' ? 55 : 40);
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(left + size * 0.18, top - 8, size * 0.64, 5);
+      ctx.fillStyle = type === 'demon' ? '#ff874a' : type === 'soldier' ? '#8fc7ff' : '#ff6b7a';
+      ctx.fillRect(left + size * 0.18, top - 8, size * 0.64 * healthRatio, 5);
     }
   }
 
