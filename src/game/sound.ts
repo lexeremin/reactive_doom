@@ -2,6 +2,7 @@ type SoundEvent = 'shoot' | 'pickup' | 'damage' | 'door' | 'level' | 'enemyDown'
 
 export class SoundSystem {
   private ctx: AudioContext | null = null;
+  private muted = false;
 
   private ensureContext() {
     if (!this.ctx) {
@@ -17,7 +18,15 @@ export class SoundSystem {
     this.ensureContext();
   }
 
+  setMuted(value: boolean) {
+    this.muted = value;
+  }
+
+  setMusicEnabled(_value: boolean) {}
+  setVolume(_value: number) {}
+
   play(event: SoundEvent) {
+    if (this.muted) return;
     const ctx = this.ensureContext();
     if (!ctx) return;
 
@@ -77,8 +86,7 @@ export class SoundSystem {
     if (event === 'level') {
       const one = makeOsc('triangle', 420, 0.05, 0.14);
       one.osc.frequency.linearRampToValueAtTime(560, now + 0.14);
-      const two = makeOsc('triangle', 630, 0.04, 0.18);
-      two.osc.start?.();
+      makeOsc('triangle', 630, 0.04, 0.18);
       return;
     }
 

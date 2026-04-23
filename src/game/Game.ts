@@ -693,6 +693,18 @@ export class Game {
     }
   }
 
+  setMuted(value: boolean) {
+    this.sound.setMuted(value);
+  }
+
+  setMusicEnabled(value: boolean) {
+    this.sound.setMusicEnabled(value);
+  }
+
+  setVolume(value: number) {
+    this.sound.setVolume(value);
+  }
+
   getUiState() {
     return {
       health: this.player.getHealth(),

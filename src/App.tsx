@@ -34,16 +34,32 @@ function App() {
     };
   }, []);
 
+  const titleByState = {
+    menu: 'REACTIVE DOOM',
+    paused: 'PAUSED',
+    dead: 'YOU DIED',
+    won: 'LEVELS CLEARED',
+    playing: 'REACTIVE DOOM',
+  } as const;
+
+  const copyByState = {
+    menu: 'A compact retro shooter prototype. Push through the exits and survive.',
+    paused: 'Take a breath, then jump back in.',
+    dead: 'You got chewed up. Restart and try a tighter route.',
+    won: 'You cleared the current build. Nice work.',
+    playing: '',
+  } as const;
+
   return (
     <div className="shell">
       <canvas id="gameCanvas" />
 
-      <div className="overlay top-left">
+      <div className="overlay top-left compact">
         <div>REACTIVE DOOM</div>
-        <div className="hint">WASD move, arrows turn, click to lock mouse, left click shoots, E uses the exit door, P or Esc pauses. Green packs heal, yellow packs give ammo, gold key opens the level exit.</div>
+        <div className="hint">WASD move, arrows turn, left click shoots, E uses exit door, P or Esc pauses.</div>
       </div>
 
-      <div className="overlay top-right">
+      <div className="overlay top-right compact">
         <div>LEVEL {ui.level}/{ui.levelCount}</div>
         <div>KILLS {ui.score}</div>
         <div>STATE {ui.status.toUpperCase()}</div>
@@ -51,21 +67,18 @@ function App() {
 
       {ui.status !== 'playing' && (
         <div className="menu-backdrop">
-          <div className="menu-panel">
-            <h1 className="menu-title">REACTIVE DOOM</h1>
-
-            {ui.status === 'menu' && <p className="menu-copy">Start a run and clear the room.</p>}
-            {ui.status === 'paused' && <p className="menu-copy">Game paused.</p>}
-            {ui.status === 'dead' && <p className="menu-copy">You died. Start again.</p>}
-            {ui.status === 'won' && <p className="menu-copy">All enemies cleared. Nice.</p>}
+          <div className="menu-panel deluxe">
+            <div className="menu-kicker">LEXEREMIN PRESENTS</div>
+            <h1 className="menu-title">{titleByState[ui.status]}</h1>
+            <p className="menu-copy">{copyByState[ui.status]}</p>
 
             <div className="menu-actions">
-              {ui.status === 'menu' && <button onClick={() => gameRef.current?.startNewGame()}>Start game</button>}
+              {ui.status === 'menu' && <button onClick={() => gameRef.current?.startNewGame()}>Start run</button>}
               {ui.status === 'paused' && <button onClick={() => gameRef.current?.resume()}>Resume</button>}
               {(ui.status === 'paused' || ui.status === 'dead' || ui.status === 'won') && (
                 <button onClick={() => gameRef.current?.restart()}>Restart</button>
               )}
-              {(ui.status === 'paused' || ui.status === 'dead' || ui.status === 'won') && <button onClick={() => gameRef.current?.backToMenu()}>Menu</button>}
+              {(ui.status === 'paused' || ui.status === 'dead' || ui.status === 'won') && <button onClick={() => gameRef.current?.backToMenu()}>Back to menu</button>}
             </div>
 
             <div className="menu-help">

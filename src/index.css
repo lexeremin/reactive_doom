@@ -38,6 +38,10 @@ html, body, #root {
   text-shadow: 2px 2px 0 #000;
 }
 
+.overlay.compact {
+  backdrop-filter: blur(4px);
+}
+
 .top-left {
   left: 14px;
   top: 14px;
@@ -56,13 +60,12 @@ html, body, #root {
   font-size: 12px;
 }
 
-
 .menu-backdrop {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(6, 4, 4, 0.62);
+  background: radial-gradient(circle at center, rgba(22, 10, 10, 0.55), rgba(4, 2, 2, 0.82));
   z-index: 3;
 }
 
@@ -76,16 +79,31 @@ html, body, #root {
   text-align: center;
 }
 
+.menu-panel.deluxe {
+  width: min(92vw, 560px);
+  padding: 32px 28px;
+  box-shadow: 14px 14px 0 #000;
+}
+
+.menu-kicker {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #caa26c;
+  margin-bottom: 14px;
+}
+
 .menu-title {
   margin: 0 0 12px;
-  font-size: 34px;
+  font-size: 40px;
   letter-spacing: 2px;
 }
 
 .menu-copy {
-  margin: 0 0 20px;
+  margin: 0 0 22px;
   font-size: 15px;
   color: #e0c99b;
+  max-width: 420px;
+  margin-inline: auto;
 }
 
 .menu-actions {
@@ -105,6 +123,7 @@ html, body, #root {
   cursor: pointer;
   box-shadow: 4px 4px 0 #000;
 }
+
 
 .menu-help {
   font-size: 12px;
