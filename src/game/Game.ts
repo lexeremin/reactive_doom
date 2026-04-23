@@ -5,6 +5,7 @@ import { Enemy } from './enemy';
 import { Weapon } from './weapon';
 import { Pickup } from './pickup';
 import { createLevel, getLevelCount, getMapDimensions } from './map';
+import { SoundSystem } from './sound';
 
 type GameStatus = 'menu' | 'playing' | 'paused' | 'dead' | 'won';
 type ExitDoor = { x: number; y: number; needsKey: boolean };
@@ -26,6 +27,7 @@ export class Game {
   private status: GameStatus = 'menu';
   private onStateChange?: () => void;
   private wallTextures: Record<number, HTMLCanvasElement>;
+  private sound = new SoundSystem();
   private message = '';
   private messageTimer = 0;
 
@@ -121,6 +123,7 @@ export class Game {
 
     this.resetWorld(this.levelIndex + 1);
     this.status = 'playing';
+    this.sound.play('level');
     this.setMessage(`Level ${this.levelIndex + 1}`, 1.5);
     this.engine.getCanvas().requestPointerLock?.();
     this.emitStateChange();
@@ -144,6 +147,7 @@ export class Game {
     }
 
     if (door.needsKey) this.player.consumeKey();
+    this.sound.play('door');
     this.setMessage('Entering next level');
     this.loadNextLevel();
   }
@@ -179,6 +183,7 @@ export class Game {
 
     const canvas = this.engine.getCanvas();
     canvas.addEventListener('click', () => {
+      this.sound.unlock();
       if (this.status === 'playing' && document.pointerLockElement !== canvas) {
         canvas.requestPointerLock?.();
       }
@@ -271,7 +276,10 @@ export class Game {
     for (const enemy of this.enemies) {
       const visible = this.hasLineOfSight(enemy.getX(), enemy.getY(), this.player.getX(), this.player.getY());
       const damage = visible ? enemy.update(dt, this.player.getX(), this.player.getY(), this.map) : 0;
-      if (damage > 0) this.player.damage(damage);
+      if (damage > 0) {
+        this.player.damage(damage);
+        this.sound.play('damage');
+      }
     }
 
     for (const pickup of this.pickups) {
@@ -283,17 +291,20 @@ export class Game {
           this.player.heal(pickup.getAmount());
           pickup.collect();
           if (this.player.getHealth() > before) {
+            this.sound.play('pickup');
             this.setMessage('Health picked up', 1.2);
           }
         } else if (pickup.getType() === 'ammo') {
           const gained = this.weapon.addAmmo(pickup.getAmount());
           pickup.collect();
           if (gained > 0) {
+            this.sound.play('pickup');
             this.setMessage('Ammo picked up', 1.2);
           }
         } else {
           this.player.giveKey();
           pickup.collect();
+          this.sound.play('pickup');
           this.setMessage('Key acquired', 1.4);
         }
         this.emitStateChange();
@@ -522,6 +533,7 @@ export class Game {
     const now = performance.now() / 1000;
     if (!this.weapon.shoot(now)) return;
 
+    this.sound.play('shoot');
     this.lastShotFlash = 1;
 
     const alive = this.enemies.filter((enemy) => enemy.isAlive());
@@ -549,6 +561,7 @@ export class Game {
       const died = best.enemy.takeDamage(this.weapon.getDamage());
       if (died) {
         this.score += 1;
+        this.sound.play('enemyDown');
         this.emitStateChange();
       }
     }

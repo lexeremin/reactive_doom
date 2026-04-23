@@ -5,3 +5,4 @@ export { Enemy } from './enemy';
 export { Weapon } from './weapon';
 export { Pickup } from './pickup';
 export { LEVELS, createLevel, getLevelCount, getMapDimensions } from './map';
+export { SoundSystem } from './sound';
