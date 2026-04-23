@@ -16,6 +16,12 @@ export class Weapon {
     return true;
   }
 
+  addAmmo(amount: number) {
+    const before = this.ammo;
+    this.ammo = Math.min(this.maxAmmo, this.ammo + amount);
+    return this.ammo - before;
+  }
+
   getDamage() { return this.damage; }
   getAmmo() { return this.ammo; }
   getMaxAmmo() { return this.maxAmmo; }

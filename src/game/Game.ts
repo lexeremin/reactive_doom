@@ -3,6 +3,7 @@ import { Raycaster } from './raycaster';
 import { Player } from './player';
 import { Enemy } from './enemy';
 import { Weapon } from './weapon';
+import { Pickup } from './pickup';
 import { MAP, getMapDimensions } from './map';
 
 type GameStatus = 'menu' | 'playing' | 'paused' | 'dead' | 'won';
@@ -14,6 +15,7 @@ export class Game {
   private enemies: Enemy[] = [];
   private weapon!: Weapon;
   private keys: Record<string, boolean> = {};
+  private pickups: Pickup[] = [];
   private lastShotFlash = 0;
   private score = 0;
   private status: GameStatus = 'menu';
@@ -77,6 +79,14 @@ export class Game {
       new Enemy(4.5, 10.5, 'soldier'),
       new Enemy(11.5, 3.5, 'imp'),
       new Enemy(12.5, 11.5, 'soldier'),
+    ];
+
+    this.pickups = [
+      new Pickup(3.5, 2.5, 'ammo', 18),
+      new Pickup(6.5, 6.5, 'health', 20),
+      new Pickup(9.5, 4.5, 'ammo', 24),
+      new Pickup(11.5, 9.5, 'health', 25),
+      new Pickup(13.5, 13.5, 'ammo', 30),
     ];
   }
 
@@ -185,6 +195,22 @@ export class Game {
       if (damage > 0) this.player.damage(damage);
     }
 
+    for (const pickup of this.pickups) {
+      if (pickup.isCollected()) continue;
+      const dist = Math.hypot(this.player.getX() - pickup.getX(), this.player.getY() - pickup.getY());
+      if (dist < 0.6) {
+        if (pickup.getType() === 'health') {
+          const before = this.player.getHealth();
+          this.player.heal(pickup.getAmount());
+          if (this.player.getHealth() > before) pickup.collect();
+        } else {
+          const gained = this.weapon.addAmmo(pickup.getAmount());
+          if (gained > 0) pickup.collect();
+        }
+        this.emitStateChange();
+      }
+    }
+
     if (this.player.getHealth() <= 0) {
       this.status = 'dead';
       document.exitPointerLock?.();
@@ -246,9 +272,50 @@ export class Game {
       ctx.fillRect(x, top, colW, wallHeight);
     }
 
+    this.renderPickups(ctx, width, height, zBuffer, rays, fov);
     this.renderSprites(ctx, width, height, zBuffer, rays, fov);
     this.renderWeapon(ctx, width, height);
     this.renderHud(ctx, width, height);
+  }
+
+  private renderPickups(ctx: CanvasRenderingContext2D, width: number, height: number, zBuffer: number[], rays: number, fov: number) {
+    const items = this.pickups
+      .filter((pickup) => !pickup.isCollected())
+      .map((pickup) => {
+        const dx = pickup.getX() - this.player.getX();
+        const dy = pickup.getY() - this.player.getY();
+        const distance = Math.hypot(dx, dy);
+        const angleToItem = Math.atan2(dy, dx);
+        let relative = angleToItem - this.player.getAngle();
+        while (relative > Math.PI) relative -= Math.PI * 2;
+        while (relative < -Math.PI) relative += Math.PI * 2;
+        return { pickup, distance, relative };
+      })
+      .filter((item) => Math.abs(item.relative) < fov * 0.8)
+      .sort((a, b) => b.distance - a.distance);
+
+    for (const item of items) {
+      const screenX = ((item.relative + fov / 2) / fov) * width;
+      const size = Math.max(12, Math.min(height * 0.24, height / (item.distance * 1.4)));
+      const left = screenX - size / 2;
+      const top = height / 2 - size / 2 + 10;
+      const centerRay = Math.floor((screenX / width) * rays);
+      if (centerRay < 0 || centerRay >= zBuffer.length || item.distance > zBuffer[centerRay] + 0.1) continue;
+
+      ctx.fillStyle = item.pickup.getType() === 'health' ? '#5fd36f' : '#e0b34f';
+      ctx.fillRect(left, top, size, size);
+      ctx.fillStyle = '#1c1408';
+
+      if (item.pickup.getType() === 'health') {
+        const bar = size * 0.22;
+        ctx.fillRect(left + size * 0.39, top + size * 0.18, bar, size * 0.64);
+        ctx.fillRect(left + size * 0.18, top + size * 0.39, size * 0.64, bar);
+      } else {
+        ctx.fillRect(left + size * 0.18, top + size * 0.18, size * 0.64, size * 0.64);
+        ctx.fillStyle = '#f6e19d';
+        ctx.fillRect(left + size * 0.3, top + size * 0.3, size * 0.4, size * 0.4);
+      }
+    }
   }
 
   private renderSprites(ctx: CanvasRenderingContext2D, width: number, height: number, zBuffer: number[], rays: number, fov: number) {
@@ -357,6 +424,7 @@ export class Game {
     return {
       health: this.player.getHealth(),
       ammo: this.weapon.getAmmo(),
+      maxAmmo: this.weapon.getMaxAmmo(),
       score: this.score,
       status: this.status,
     };

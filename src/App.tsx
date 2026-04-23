@@ -4,13 +4,14 @@ import { Game } from './game/Game';
 type UiState = {
   health: number;
   ammo: number;
+  maxAmmo: number;
   score: number;
   status: 'menu' | 'playing' | 'paused' | 'dead' | 'won';
 };
 
 function App() {
   const gameRef = useRef<Game | null>(null);
-  const [ui, setUi] = useState<UiState>({ health: 100, ammo: 60, score: 0, status: 'menu' });
+  const [ui, setUi] = useState<UiState>({ health: 100, ammo: 60, maxAmmo: 120, score: 0, status: 'menu' });
 
   useEffect(() => {
     const sync = () => {
@@ -35,12 +36,12 @@ function App() {
 
       <div className="overlay top-left">
         <div>REACTIVE DOOM</div>
-        <div className="hint">WASD move, arrows turn, click to lock mouse, left click shoots, P or Esc pauses</div>
+        <div className="hint">WASD move, arrows turn, click to lock mouse, left click shoots, P or Esc pauses. Green packs heal, yellow packs give ammo.</div>
       </div>
 
       <div className="overlay top-right">
         <div>HP {ui.health}</div>
-        <div>AMMO {ui.ammo}</div>
+        <div>AMMO {ui.ammo}/{ui.maxAmmo}</div>
         <div>KILLS {ui.score}</div>
         <div>STATE {ui.status.toUpperCase()}</div>
       </div>
