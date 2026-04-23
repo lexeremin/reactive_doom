@@ -20,7 +20,7 @@ export const LEVELS = [
       [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     ],
     enemies: [
-      { x: 7.5, y: 3.5, type: 'imp' as const },
+      { x: 8.0, y: 8.0, type: 'imp' as const },
       { x: 10.5, y: 8.5, type: 'demon' as const },
       { x: 4.5, y: 10.5, type: 'soldier' as const },
       { x: 11.5, y: 3.5, type: 'imp' as const },
