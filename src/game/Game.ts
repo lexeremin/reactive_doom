@@ -438,14 +438,35 @@ export class Game {
         ctx.font = `bold ${Math.max(6, size * 0.12)}px monospace`;
         ctx.fillText('AMMO', left + size * 0.16, top + size * 0.58);
       } else {
-        ctx.fillStyle = '#d7ba55';
-        ctx.fillRect(left + size * 0.18, top + size * 0.14, size * 0.24, size * 0.56);
-        ctx.fillRect(left + size * 0.38, top + size * 0.44, size * 0.36, size * 0.16);
+        const px = (n: number) => Math.max(1, Math.round(size * n));
+        const ox = left + size * 0.08;
+        const oy = top + size * 0.18;
+
+        ctx.fillStyle = '#15120f';
         ctx.beginPath();
-        ctx.arc(left + size * 0.3, top + size * 0.24, size * 0.16, Math.PI, Math.PI * 2);
-        ctx.strokeStyle = '#d7ba55';
-        ctx.lineWidth = Math.max(2, size * 0.08);
-        ctx.stroke();
+        ctx.arc(ox + px(0.24), oy + px(0.18), px(0.16), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(ox + px(0.24), oy + px(0.14), px(0.42), px(0.08));
+        ctx.fillRect(ox + px(0.58), oy + px(0.14), px(0.08), px(0.16));
+        ctx.fillRect(ox + px(0.7), oy + px(0.14), px(0.08), px(0.12));
+        ctx.fillRect(ox + px(0.82), oy + px(0.14), px(0.08), px(0.2));
+        ctx.fillRect(ox + px(0.76), oy + px(0.26), px(0.08), px(0.12));
+
+        ctx.fillStyle = '#ffb21f';
+        ctx.beginPath();
+        ctx.arc(ox + px(0.24), oy + px(0.18), px(0.13), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#163132';
+        ctx.beginPath();
+        ctx.arc(ox + px(0.24), oy + px(0.18), px(0.055), 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffb21f';
+        ctx.fillRect(ox + px(0.28), oy + px(0.15), px(0.36), px(0.05));
+        ctx.fillRect(ox + px(0.6), oy + px(0.15), px(0.05), px(0.13));
+        ctx.fillRect(ox + px(0.72), oy + px(0.15), px(0.05), px(0.09));
+        ctx.fillRect(ox + px(0.84), oy + px(0.15), px(0.05), px(0.17));
+        ctx.fillRect(ox + px(0.78), oy + px(0.24), px(0.05), px(0.1));
       }
     }
   }
