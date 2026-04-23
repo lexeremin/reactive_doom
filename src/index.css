@@ -136,3 +136,25 @@ html, body, #root {
   line-height: 1.6;
   color: #d8bf90;
 }
+
+.menu-github {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #f6dfb4;
+  text-decoration: none;
+  justify-content: center;
+  font-size: 13px;
+  opacity: 0.92;
+}
+
+.menu-github:hover {
+  color: #ffd68e;
+}
+
+.menu-github svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}

@@ -497,8 +497,12 @@ export class Game {
     ctx.fillText(`KEY ${this.player.getHasKey() ? 'YES' : 'NO'}`, 620, height - 25);
 
     if (this.message) {
+      ctx.fillStyle = 'rgba(20, 12, 8, 0.88)';
+      ctx.fillRect(width / 2 - 130, 18, 260, 34);
+      ctx.strokeStyle = '#8f6f4a';
+      ctx.strokeRect(width / 2 - 130, 18, 260, 34);
       ctx.fillStyle = '#f3d58f';
-      ctx.fillText(this.message.toUpperCase(), width / 2 - 90, height - 25);
+      ctx.fillText(this.message.toUpperCase(), width / 2 - 110, 41);
     }
 
     ctx.strokeStyle = '#d4c6a8';
