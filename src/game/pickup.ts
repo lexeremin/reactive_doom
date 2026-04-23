@@ -1,4 +1,4 @@
-export type PickupType = 'health' | 'ammo';
+export type PickupType = 'health' | 'ammo' | 'key';
 
 export class Pickup {
   private x: number;
@@ -22,19 +22,8 @@ export class Pickup {
     this.collected = true;
   }
 
-  getX() {
-    return this.x;
-  }
-
-  getY() {
-    return this.y;
-  }
-
-  getType() {
-    return this.type;
-  }
-
-  getAmount() {
-    return this.amount;
-  }
+  getX() { return this.x; }
+  getY() { return this.y; }
+  getType() { return this.type; }
+  getAmount() { return this.amount; }
 }

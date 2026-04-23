@@ -6,6 +6,7 @@ export class Player {
   private moveSpeed = 2.8;
   private turnSpeed = 2.2;
   private radius = 0.2;
+  private hasKey = false;
 
   constructor(x: number, y: number, angle = 0) {
     this.x = x;
@@ -85,6 +86,17 @@ export class Player {
     this.health = Math.min(100, this.health + amount);
   }
 
+  giveKey() {
+    this.hasKey = true;
+  }
+
+  consumeKey() {
+    if (!this.hasKey) return false;
+    this.hasKey = false;
+    return true;
+  }
+
+  getHasKey() { return this.hasKey; }
   getX() { return this.x; }
   getY() { return this.y; }
   getAngle() { return this.angle; }

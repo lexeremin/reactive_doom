@@ -4,13 +4,18 @@ import { Player } from './player';
 import { Enemy } from './enemy';
 import { Weapon } from './weapon';
 import { Pickup } from './pickup';
-import { MAP, getMapDimensions } from './map';
+import { createLevel, getLevelCount, getMapDimensions } from './map';
 
 type GameStatus = 'menu' | 'playing' | 'paused' | 'dead' | 'won';
+type ExitDoor = { x: number; y: number; needsKey: boolean };
 
 export class Game {
   private engine: GameEngine;
   private raycaster: Raycaster;
+  private map: number[][] = [];
+  private levelIndex = 0;
+  private levelCount = getLevelCount();
+  private exitDoors: ExitDoor[] = [];
   private player!: Player;
   private enemies: Enemy[] = [];
   private weapon!: Weapon;
@@ -21,18 +26,21 @@ export class Game {
   private status: GameStatus = 'menu';
   private onStateChange?: () => void;
   private wallTextures: Record<number, HTMLCanvasElement>;
+  private message = '';
+  private messageTimer = 0;
 
   constructor(onStateChange?: () => void) {
     this.engine = new GameEngine('gameCanvas');
-    this.raycaster = new Raycaster(MAP, getMapDimensions(MAP).width, getMapDimensions(MAP).height);
+    this.map = createLevel(0).map;
+    this.raycaster = new Raycaster(this.map, getMapDimensions(this.map).width, getMapDimensions(this.map).height);
     this.onStateChange = onStateChange;
     this.wallTextures = this.createWallTextures();
-    this.resetWorld();
+    this.resetWorld(0);
     this.setupInput();
   }
 
   private createWallTextures() {
-    const makeTexture = (base: string, dark: string, accent: string) => {
+    const makeTexture = (base: string, dark: string, accent: string, mode: 'wall' | 'door' = 'wall') => {
       const canvas = document.createElement('canvas');
       canvas.width = 32;
       canvas.height = 32;
@@ -41,21 +49,30 @@ export class Game {
       ctx.fillStyle = base;
       ctx.fillRect(0, 0, 32, 32);
 
-      for (let y = 0; y < 32; y += 8) {
+      if (mode === 'door') {
         for (let x = 0; x < 32; x += 8) {
-          ctx.fillStyle = (x + y) % 16 === 0 ? dark : base;
-          ctx.fillRect(x, y, 8, 8);
+          ctx.fillStyle = x % 16 === 0 ? dark : base;
+          ctx.fillRect(x, 0, 8, 32);
         }
-      }
-
-      ctx.fillStyle = accent;
-      for (let i = 0; i < 32; i += 4) {
-        ctx.fillRect(i, 0, 1, 32);
-      }
-
-      ctx.fillStyle = 'rgba(0,0,0,0.18)';
-      for (let i = 0; i < 32; i += 8) {
-        ctx.fillRect(0, i, 32, 1);
+        ctx.fillStyle = accent;
+        ctx.fillRect(14, 0, 4, 32);
+        ctx.fillStyle = '#e5c37a';
+        ctx.fillRect(23, 16, 3, 3);
+      } else {
+        for (let y = 0; y < 32; y += 8) {
+          for (let x = 0; x < 32; x += 8) {
+            ctx.fillStyle = (x + y) % 16 === 0 ? dark : base;
+            ctx.fillRect(x, y, 8, 8);
+          }
+        }
+        ctx.fillStyle = accent;
+        for (let i = 0; i < 32; i += 4) {
+          ctx.fillRect(i, 0, 1, 32);
+        }
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        for (let i = 0; i < 32; i += 8) {
+          ctx.fillRect(0, i, 32, 1);
+        }
       }
 
       return canvas;
@@ -65,33 +82,70 @@ export class Game {
       1: makeTexture('#78624a', '#5d4b38', '#9d805e'),
       2: makeTexture('#4e7a61', '#365744', '#76a98a'),
       3: makeTexture('#7a4f4f', '#5d3939', '#ab6a6a'),
+      4: makeTexture('#8b673c', '#6d4f2a', '#c49a56', 'door'),
     };
   }
 
-  private resetWorld() {
-    this.player = new Player(1.5, 1.5, 0.1);
+  private resetWorld(levelIndex: number) {
+    const level = createLevel(levelIndex);
+    this.levelIndex = levelIndex;
+    this.map = level.map;
+    this.exitDoors = level.exitDoors;
+    this.raycaster = new Raycaster(this.map, getMapDimensions(this.map).width, getMapDimensions(this.map).height);
+    this.player = new Player(level.start.x, level.start.y, level.start.angle);
     this.weapon = new Weapon();
-    this.score = 0;
     this.lastShotFlash = 0;
-    this.enemies = [
-      new Enemy(7.5, 3.5, 'imp'),
-      new Enemy(10.5, 8.5, 'demon'),
-      new Enemy(4.5, 10.5, 'soldier'),
-      new Enemy(11.5, 3.5, 'imp'),
-      new Enemy(12.5, 11.5, 'soldier'),
-    ];
-
-    this.pickups = [
-      new Pickup(3.5, 2.5, 'ammo', 18),
-      new Pickup(6.5, 6.5, 'health', 20),
-      new Pickup(9.5, 4.5, 'ammo', 24),
-      new Pickup(11.5, 9.5, 'health', 25),
-      new Pickup(13.5, 13.5, 'ammo', 30),
-    ];
+    this.message = '';
+    this.messageTimer = 0;
+    this.enemies = level.enemies.map((enemy) => new Enemy(enemy.x, enemy.y, enemy.type));
+    this.pickups = level.pickups.map((pickup) => new Pickup(pickup.x, pickup.y, pickup.type, pickup.amount));
   }
 
   private emitStateChange() {
     this.onStateChange?.();
+  }
+
+  private setMessage(text: string, seconds = 1.5) {
+    this.message = text;
+    this.messageTimer = seconds;
+    this.emitStateChange();
+  }
+
+  private loadNextLevel() {
+    if (this.levelIndex + 1 >= this.levelCount) {
+      this.status = 'won';
+      document.exitPointerLock?.();
+      this.emitStateChange();
+      return;
+    }
+
+    this.resetWorld(this.levelIndex + 1);
+    this.status = 'playing';
+    this.setMessage(`Level ${this.levelIndex + 1}`, 1.5);
+    this.engine.getCanvas().requestPointerLock?.();
+    this.emitStateChange();
+  }
+
+  private tryUseDoor() {
+    if (this.status !== 'playing') return;
+    const frontX = this.player.getX() + Math.cos(this.player.getAngle()) * 0.8;
+    const frontY = this.player.getY() + Math.sin(this.player.getAngle()) * 0.8;
+    const cellX = Math.floor(frontX);
+    const cellY = Math.floor(frontY);
+
+    if (this.map[cellY]?.[cellX] !== 4) return;
+
+    const door = this.exitDoors.find((entry) => entry.x === cellX && entry.y === cellY);
+    if (!door) return;
+
+    if (door.needsKey && !this.player.getHasKey()) {
+      this.setMessage('Need a key');
+      return;
+    }
+
+    if (door.needsKey) this.player.consumeKey();
+    this.setMessage('Entering next level');
+    this.loadNextLevel();
   }
 
   private setupInput() {
@@ -112,6 +166,10 @@ export class Game {
         if (this.status === 'menu' || this.status === 'dead' || this.status === 'won') {
           this.startNewGame();
         }
+      }
+
+      if (e.key.toLowerCase() === 'e') {
+        this.tryUseDoor();
       }
     });
 
@@ -153,8 +211,10 @@ export class Game {
   }
 
   startNewGame() {
-    this.resetWorld();
+    this.score = 0;
+    this.resetWorld(0);
     this.status = 'playing';
+    this.setMessage('Level 1', 1.5);
     this.engine.getCanvas().requestPointerLock?.();
     this.emitStateChange();
   }
@@ -178,7 +238,7 @@ export class Game {
   }
 
   backToMenu() {
-    this.resetWorld();
+    this.resetWorld(0);
     this.status = 'menu';
     document.exitPointerLock?.();
     this.emitStateChange();
@@ -194,7 +254,7 @@ export class Game {
       const t = i / steps;
       const x = fromX + dx * t;
       const y = fromY + dy * t;
-      if (MAP[Math.floor(y)]?.[Math.floor(x)] > 0) return false;
+      if (this.map[Math.floor(y)]?.[Math.floor(x)] > 0) return false;
     }
 
     return true;
@@ -203,12 +263,14 @@ export class Game {
   private update(dt: number) {
     if (this.status !== 'playing') return;
 
-    this.player.update(dt, this.keys, MAP);
+    this.player.update(dt, this.keys, this.map);
     this.lastShotFlash = Math.max(0, this.lastShotFlash - dt * 4);
+    this.messageTimer = Math.max(0, this.messageTimer - dt);
+    if (this.messageTimer === 0 && this.message) this.message = '';
 
     for (const enemy of this.enemies) {
       const visible = this.hasLineOfSight(enemy.getX(), enemy.getY(), this.player.getX(), this.player.getY());
-      const damage = visible ? enemy.update(dt, this.player.getX(), this.player.getY(), MAP) : 0;
+      const damage = visible ? enemy.update(dt, this.player.getX(), this.player.getY(), this.map) : 0;
       if (damage > 0) this.player.damage(damage);
     }
 
@@ -219,10 +281,20 @@ export class Game {
         if (pickup.getType() === 'health') {
           const before = this.player.getHealth();
           this.player.heal(pickup.getAmount());
-          if (this.player.getHealth() > before) pickup.collect();
-        } else {
+          if (this.player.getHealth() > before) {
+            pickup.collect();
+            this.setMessage('Health picked up', 1.2);
+          }
+        } else if (pickup.getType() === 'ammo') {
           const gained = this.weapon.addAmmo(pickup.getAmount());
-          if (gained > 0) pickup.collect();
+          if (gained > 0) {
+            pickup.collect();
+            this.setMessage('Ammo picked up', 1.2);
+          }
+        } else {
+          this.player.giveKey();
+          pickup.collect();
+          this.setMessage('Key acquired', 1.4);
         }
         this.emitStateChange();
       }
@@ -233,12 +305,6 @@ export class Game {
       document.exitPointerLock?.();
       this.emitStateChange();
       return;
-    }
-
-    if (this.enemies.every((enemy) => !enemy.isAlive())) {
-      this.status = 'won';
-      document.exitPointerLock?.();
-      this.emitStateChange();
     }
   }
 
@@ -277,7 +343,7 @@ export class Game {
       const x = Math.floor((i / rays) * width);
       const colW = Math.ceil(width / rays);
       const top = Math.floor((height - wallHeight) / 2);
-      const textureId = MAP[Math.floor(hit.hitY)]?.[Math.floor(hit.hitX)] || 1;
+      const textureId = this.map[Math.floor(hit.hitY)]?.[Math.floor(hit.hitX)] || 1;
       const texture = this.wallTextures[textureId] || this.wallTextures[1];
       const hitOffset = hit.side === 0 ? hit.hitY % 1 : hit.hitX % 1;
       const texX = Math.max(0, Math.min(31, Math.floor(hitOffset * 32)));
@@ -326,7 +392,7 @@ export class Game {
         const bar = size * 0.22;
         ctx.fillRect(left + size * 0.39, top + size * 0.18, bar, size * 0.64);
         ctx.fillRect(left + size * 0.18, top + size * 0.39, size * 0.64, bar);
-      } else {
+      } else if (item.pickup.getType() === 'ammo') {
         ctx.fillStyle = '#8b5a2b';
         ctx.fillRect(left, top + size * 0.18, size, size * 0.64);
         ctx.fillStyle = '#6f431c';
@@ -354,6 +420,15 @@ export class Game {
         ctx.fillStyle = '#f1d19c';
         ctx.font = `bold ${Math.max(6, size * 0.12)}px monospace`;
         ctx.fillText('AMMO', left + size * 0.16, top + size * 0.58);
+      } else {
+        ctx.fillStyle = '#d7ba55';
+        ctx.fillRect(left + size * 0.18, top + size * 0.14, size * 0.24, size * 0.56);
+        ctx.fillRect(left + size * 0.38, top + size * 0.44, size * 0.36, size * 0.16);
+        ctx.beginPath();
+        ctx.arc(left + size * 0.3, top + size * 0.24, size * 0.16, Math.PI, Math.PI * 2);
+        ctx.strokeStyle = '#d7ba55';
+        ctx.lineWidth = Math.max(2, size * 0.08);
+        ctx.stroke();
       }
     }
   }
@@ -415,9 +490,16 @@ export class Game {
 
     ctx.fillStyle = '#f2e7cf';
     ctx.font = 'bold 18px monospace';
-    ctx.fillText(`HP ${String(this.player.getHealth()).padStart(3, '0')}`, 22, height - 25);
-    ctx.fillText(`AMMO ${String(this.weapon.getAmmo()).padStart(3, '0')}`, 170, height - 25);
-    ctx.fillText(`KILLS ${String(this.score).padStart(2, '0')}`, 360, height - 25);
+    ctx.fillText(`LVL ${this.levelIndex + 1}/${this.levelCount}`, 22, height - 25);
+    ctx.fillText(`HP ${String(this.player.getHealth()).padStart(3, '0')}`, 130, height - 25);
+    ctx.fillText(`AMMO ${String(this.weapon.getAmmo()).padStart(3, '0')}`, 280, height - 25);
+    ctx.fillText(`KILLS ${String(this.score).padStart(2, '0')}`, 470, height - 25);
+    ctx.fillText(`KEY ${this.player.getHasKey() ? 'YES' : 'NO'}`, 620, height - 25);
+
+    if (this.message) {
+      ctx.fillStyle = '#f3d58f';
+      ctx.fillText(this.message.toUpperCase(), width / 2 - 90, height - 25);
+    }
 
     ctx.strokeStyle = '#d4c6a8';
     ctx.beginPath();
@@ -472,6 +554,10 @@ export class Game {
       maxAmmo: this.weapon.getMaxAmmo(),
       score: this.score,
       status: this.status,
+      hasKey: this.player.getHasKey(),
+      message: this.message,
+      level: this.levelIndex + 1,
+      levelCount: this.levelCount,
     };
   }
 }
