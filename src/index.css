@@ -50,7 +50,7 @@ html, body, #root {
 }
 
 .hint {
-  max-width: 320px;
+  max-width: 340px;
   opacity: 0.85;
   margin-top: 4px;
   font-size: 12px;
@@ -72,7 +72,67 @@ html, body, #root {
   box-shadow: 4px 4px 0 #000;
 }
 
-.shoot-btn:active {
+.shoot-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.shoot-btn:active:not(:disabled) {
   transform: translate(2px, 2px);
   box-shadow: 2px 2px 0 #000;
+}
+
+.menu-backdrop {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 4, 4, 0.62);
+  z-index: 3;
+}
+
+.menu-panel {
+  width: min(92vw, 480px);
+  border: 2px solid #c99954;
+  background: linear-gradient(180deg, rgba(36, 18, 18, 0.96), rgba(14, 8, 8, 0.96));
+  color: #f6dfb4;
+  box-shadow: 10px 10px 0 #000;
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.menu-title {
+  margin: 0 0 12px;
+  font-size: 34px;
+  letter-spacing: 2px;
+}
+
+.menu-copy {
+  margin: 0 0 20px;
+  font-size: 15px;
+  color: #e0c99b;
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.menu-actions button {
+  border: 2px solid #d3a65a;
+  background: linear-gradient(#8f2e2e, #501414);
+  color: #f8e5bb;
+  font: inherit;
+  font-weight: bold;
+  padding: 12px 14px;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.menu-help {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #d8bf90;
 }

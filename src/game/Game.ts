@@ -11,23 +11,33 @@ const WALL_COLORS: Record<number, string> = {
   3: '#7a4f4f',
 };
 
+type GameStatus = 'menu' | 'playing' | 'paused' | 'dead' | 'won';
+
 export class Game {
   private engine: GameEngine;
   private raycaster: Raycaster;
-  private player: Player;
+  private player!: Player;
   private enemies: Enemy[] = [];
-  private weapon: Weapon;
+  private weapon!: Weapon;
   private keys: Record<string, boolean> = {};
   private lastShotFlash = 0;
   private score = 0;
-  private won = false;
+  private status: GameStatus = 'menu';
+  private onStateChange?: () => void;
 
-  constructor() {
+  constructor(onStateChange?: () => void) {
     this.engine = new GameEngine('gameCanvas');
     this.raycaster = new Raycaster(MAP, getMapDimensions(MAP).width, getMapDimensions(MAP).height);
+    this.onStateChange = onStateChange;
+    this.resetWorld();
+    this.setupInput();
+  }
+
+  private resetWorld() {
     this.player = new Player(1.5, 1.5, 0.1);
     this.weapon = new Weapon();
-
+    this.score = 0;
+    this.lastShotFlash = 0;
     this.enemies = [
       new Enemy(7.5, 3.5, 'imp'),
       new Enemy(10.5, 8.5, 'demon'),
@@ -35,23 +45,48 @@ export class Game {
       new Enemy(11.5, 3.5, 'imp'),
       new Enemy(12.5, 11.5, 'soldier'),
     ];
+  }
 
-    this.setupInput();
+  private emitStateChange() {
+    this.onStateChange?.();
   }
 
   private setupInput() {
     window.addEventListener('keydown', (e) => {
       this.keys[e.key.toLowerCase()] = true;
-      if (e.code === 'Space') this.shoot();
+
+      if (e.code === 'Space') {
+        if (this.status === 'playing') this.shoot();
+      }
+
+      if (e.key === 'Escape') {
+        if (this.status === 'playing') this.pause();
+        else if (this.status === 'paused') this.resume();
+      }
+
+      if (e.key.toLowerCase() === 'p') {
+        if (this.status === 'playing') this.pause();
+        else if (this.status === 'paused') this.resume();
+      }
+
+      if (e.key.toLowerCase() === 'enter') {
+        if (this.status === 'menu' || this.status === 'dead' || this.status === 'won') {
+          this.startNewGame();
+        }
+      }
     });
+
     window.addEventListener('keyup', (e) => {
       this.keys[e.key.toLowerCase()] = false;
     });
 
     const canvas = this.engine.getCanvas();
-    canvas.addEventListener('click', () => canvas.requestPointerLock?.());
+    canvas.addEventListener('click', () => {
+      if (this.status === 'playing') canvas.requestPointerLock?.();
+    });
 
     document.addEventListener('mousemove', (e) => {
+      if (this.status !== 'playing') return;
       if (document.pointerLockElement === canvas) {
         this.player.updateAngle(e.movementX * 0.0025);
       }
@@ -65,8 +100,40 @@ export class Game {
     });
   }
 
+  startNewGame() {
+    this.resetWorld();
+    this.status = 'playing';
+    this.engine.getCanvas().requestPointerLock?.();
+    this.emitStateChange();
+  }
+
+  pause() {
+    if (this.status === 'menu') return;
+    this.status = 'paused';
+    document.exitPointerLock?.();
+    this.emitStateChange();
+  }
+
+  resume() {
+    if (this.status !== 'paused') return;
+    this.status = 'playing';
+    this.engine.getCanvas().requestPointerLock?.();
+    this.emitStateChange();
+  }
+
+  restart() {
+    this.startNewGame();
+  }
+
+  backToMenu() {
+    this.resetWorld();
+    this.status = 'menu';
+    document.exitPointerLock?.();
+    this.emitStateChange();
+  }
+
   private update(dt: number) {
-    if (this.player.getHealth() <= 0 || this.won) return;
+    if (this.status !== 'playing') return;
 
     this.player.update(dt, this.keys, MAP);
     this.lastShotFlash = Math.max(0, this.lastShotFlash - dt * 4);
@@ -76,7 +143,18 @@ export class Game {
       if (damage > 0) this.player.damage(damage);
     }
 
-    this.won = this.enemies.every((enemy) => !enemy.isAlive());
+    if (this.player.getHealth() <= 0) {
+      this.status = 'dead';
+      document.exitPointerLock?.();
+      this.emitStateChange();
+      return;
+    }
+
+    if (this.enemies.every((enemy) => !enemy.isAlive())) {
+      this.status = 'won';
+      document.exitPointerLock?.();
+      this.emitStateChange();
+    }
   }
 
   private render() {
@@ -119,7 +197,6 @@ export class Game {
 
       ctx.fillStyle = this.shadeColor(color, shade);
       ctx.fillRect(x, top, colW, wallHeight);
-
       ctx.fillStyle = `rgba(0,0,0,${Math.min(0.7, corrected / 18)})`;
       ctx.fillRect(x, top, colW, wallHeight);
     }
@@ -129,14 +206,7 @@ export class Game {
     this.renderHud(ctx, width, height);
   }
 
-  private renderSprites(
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-    zBuffer: number[],
-    rays: number,
-    fov: number,
-  ) {
+  private renderSprites(ctx: CanvasRenderingContext2D, width: number, height: number, zBuffer: number[], rays: number, fov: number) {
     const sprites = this.enemies
       .filter((enemy) => enemy.isAlive())
       .map((enemy) => {
@@ -203,22 +273,6 @@ export class Game {
     ctx.moveTo(width / 2, height / 2 - 10);
     ctx.lineTo(width / 2, height / 2 + 10);
     ctx.stroke();
-
-    if (this.player.getHealth() <= 0) {
-      this.renderMessage(ctx, width, height, 'YOU DIED');
-    } else if (this.won) {
-      this.renderMessage(ctx, width, height, 'LEVEL CLEARED');
-    }
-  }
-
-  private renderMessage(ctx: CanvasRenderingContext2D, width: number, height: number, text: string) {
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(width / 2 - 170, height / 2 - 50, 340, 100);
-    ctx.strokeStyle = '#d3b278';
-    ctx.strokeRect(width / 2 - 170, height / 2 - 50, 340, 100);
-    ctx.fillStyle = '#f6e3b7';
-    ctx.font = 'bold 28px monospace';
-    ctx.fillText(text, width / 2 - 110, height / 2 + 10);
   }
 
   private shadeColor(hex: string, mult: number) {
@@ -230,14 +284,14 @@ export class Game {
   }
 
   shoot() {
-    if (this.player.getHealth() <= 0 || this.won) return;
+    if (this.status !== 'playing') return;
     const now = performance.now() / 1000;
     if (!this.weapon.shoot(now)) return;
 
     this.lastShotFlash = 1;
 
     const alive = this.enemies.filter((enemy) => enemy.isAlive());
-    let best: { enemy: Enemy; angleDiff: number; distance: number } | null = null;
+    let best: { enemy: Enemy; distance: number } | null = null;
 
     for (const enemy of alive) {
       const dx = enemy.getX() - this.player.getX();
@@ -249,13 +303,16 @@ export class Game {
       while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
       const absDiff = Math.abs(angleDiff);
       if (absDiff < 0.1 && (!best || distance < best.distance)) {
-        best = { enemy, angleDiff: absDiff, distance };
+        best = { enemy, distance };
       }
     }
 
     if (best && best.distance < 8) {
       const died = best.enemy.takeDamage(this.weapon.getDamage());
-      if (died) this.score += 1;
+      if (died) {
+        this.score += 1;
+        this.emitStateChange();
+      }
     }
   }
 
@@ -264,7 +321,7 @@ export class Game {
       health: this.player.getHealth(),
       ammo: this.weapon.getAmmo(),
       score: this.score,
-      won: this.won,
+      status: this.status,
     };
   }
 }
