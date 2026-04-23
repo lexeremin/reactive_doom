@@ -1,73 +1,64 @@
-# React + TypeScript + Vite
+# reactive_doom
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A compact Doom-like retro FPS built with React, Vite, TypeScript, and a custom canvas raycasting engine.
 
-Currently, two official plugins are available:
+## What this project is
+This project is a browser-based first person shooter prototype with a pixelated retro style.
+It is intentionally lightweight and currently uses a custom raycasting renderer instead of a heavy 3D engine.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Current features:
+- React + Vite + TypeScript setup
+- custom canvas renderer
+- first-person movement
+- mouse look with pointer lock
+- shooting
+- simple enemies
+- HUD with health, ammo, and kills
+- retro pixel-style presentation
 
-## React Compiler
+## Project status
+This is an active prototype, not a finished game.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+For the current state of the project, roadmap, todos, and handoff notes for future sessions/models, read:
 
-## Expanding the ESLint configuration
+- [`STATUS.md`](./STATUS.md)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+That file should be treated as the main continuity document for this repo.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Controls
+- `WASD` move
+- `Arrow Left / Arrow Right` turn
+- click the canvas to lock the pointer
+- move mouse to look around
+- `Space` to shoot
+- on-screen `SHOOT` button is also available
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Run locally
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+To expose on LAN:
+```bash
+npm run dev -- --host 0.0.0.0
 ```
+
+## Build
+```bash
+npm run build
+```
+
+## Technical direction
+The current direction is:
+- keep the app lightweight
+- keep the custom raycasting approach for now
+- improve gameplay feel before expanding scope too far
+- use `STATUS.md` as the source of truth for roadmap and session handoff
+
+## Repository workflow
+Preferred workflow:
+- make focused improvements
+- keep `STATUS.md` updated when priorities or project state change
+- commit small meaningful chunks
+- push regularly
