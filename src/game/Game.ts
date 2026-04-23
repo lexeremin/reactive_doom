@@ -184,6 +184,22 @@ export class Game {
     this.emitStateChange();
   }
 
+  private hasLineOfSight(fromX: number, fromY: number, toX: number, toY: number) {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+    const distance = Math.hypot(dx, dy);
+    const steps = Math.max(8, Math.ceil(distance * 20));
+
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const x = fromX + dx * t;
+      const y = fromY + dy * t;
+      if (MAP[Math.floor(y)]?.[Math.floor(x)] > 0) return false;
+    }
+
+    return true;
+  }
+
   private update(dt: number) {
     if (this.status !== 'playing') return;
 
@@ -191,7 +207,8 @@ export class Game {
     this.lastShotFlash = Math.max(0, this.lastShotFlash - dt * 4);
 
     for (const enemy of this.enemies) {
-      const damage = enemy.update(dt, this.player.getX(), this.player.getY(), MAP);
+      const visible = this.hasLineOfSight(enemy.getX(), enemy.getY(), this.player.getX(), this.player.getY());
+      const damage = visible ? enemy.update(dt, this.player.getX(), this.player.getY(), MAP) : 0;
       if (damage > 0) this.player.damage(damage);
     }
 
@@ -352,9 +369,10 @@ export class Game {
         let relative = angleToEnemy - this.player.getAngle();
         while (relative > Math.PI) relative -= Math.PI * 2;
         while (relative < -Math.PI) relative += Math.PI * 2;
-        return { enemy, distance, relative };
+        const visible = this.hasLineOfSight(this.player.getX(), this.player.getY(), enemy.getX(), enemy.getY());
+        return { enemy, distance, relative, visible };
       })
-      .filter((s) => Math.abs(s.relative) < fov * 0.8)
+      .filter((s) => s.visible && Math.abs(s.relative) < fov * 0.8)
       .sort((a, b) => b.distance - a.distance);
 
     for (const sprite of sprites) {
@@ -418,7 +436,7 @@ export class Game {
     this.lastShotFlash = 1;
 
     const alive = this.enemies.filter((enemy) => enemy.isAlive());
-    let best: { enemy: Enemy; distance: number } | null = null;
+    let best: { enemy: Enemy; distance: number; angleDiff: number } | null = null;
 
     for (const enemy of alive) {
       const dx = enemy.getX() - this.player.getX();
@@ -429,12 +447,16 @@ export class Game {
       while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
       while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
       const absDiff = Math.abs(angleDiff);
-      if (absDiff < 0.1 && (!best || distance < best.distance)) {
-        best = { enemy, distance };
+      const visible = this.hasLineOfSight(this.player.getX(), this.player.getY(), enemy.getX(), enemy.getY());
+      if (!visible) continue;
+      if (absDiff < 0.12 && distance < 9) {
+        if (!best || absDiff < best.angleDiff || (Math.abs(absDiff - best.angleDiff) < 0.015 && distance < best.distance)) {
+          best = { enemy, distance, angleDiff: absDiff };
+        }
       }
     }
 
-    if (best && best.distance < 8) {
+    if (best) {
       const died = best.enemy.takeDamage(this.weapon.getDamage());
       if (died) {
         this.score += 1;
