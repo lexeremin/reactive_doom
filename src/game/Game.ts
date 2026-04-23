@@ -296,24 +296,47 @@ export class Game {
 
     for (const item of items) {
       const screenX = ((item.relative + fov / 2) / fov) * width;
-      const size = Math.max(12, Math.min(height * 0.24, height / (item.distance * 1.4)));
+      const size = Math.max(10, Math.min(height * 0.16, height / (item.distance * 2.1)));
       const left = screenX - size / 2;
-      const top = height / 2 - size / 2 + 10;
+      const top = height / 2 - size / 2 + 12;
       const centerRay = Math.floor((screenX / width) * rays);
       if (centerRay < 0 || centerRay >= zBuffer.length || item.distance > zBuffer[centerRay] + 0.1) continue;
 
-      ctx.fillStyle = item.pickup.getType() === 'health' ? '#5fd36f' : '#e0b34f';
-      ctx.fillRect(left, top, size, size);
-      ctx.fillStyle = '#1c1408';
-
       if (item.pickup.getType() === 'health') {
+        ctx.fillStyle = '#5fd36f';
+        ctx.fillRect(left, top, size, size);
+        ctx.fillStyle = '#1c1408';
         const bar = size * 0.22;
         ctx.fillRect(left + size * 0.39, top + size * 0.18, bar, size * 0.64);
         ctx.fillRect(left + size * 0.18, top + size * 0.39, size * 0.64, bar);
       } else {
-        ctx.fillRect(left + size * 0.18, top + size * 0.18, size * 0.64, size * 0.64);
-        ctx.fillStyle = '#f6e19d';
-        ctx.fillRect(left + size * 0.3, top + size * 0.3, size * 0.4, size * 0.4);
+        ctx.fillStyle = '#8b5a2b';
+        ctx.fillRect(left, top + size * 0.18, size, size * 0.64);
+        ctx.fillStyle = '#6f431c';
+        ctx.fillRect(left + size * 0.06, top + size * 0.24, size * 0.88, size * 0.52);
+        ctx.fillStyle = '#b47b3f';
+        ctx.fillRect(left + size * 0.1, top + size * 0.28, size * 0.8, size * 0.08);
+        ctx.fillRect(left + size * 0.1, top + size * 0.62, size * 0.8, size * 0.06);
+
+        const bulletW = size * 0.16;
+        const bulletH = size * 0.22;
+        const bulletY = top + size * 0.31;
+        const offsets = [0.18, 0.42, 0.66];
+        ctx.fillStyle = '#111';
+        for (const offset of offsets) {
+          const bx = left + size * offset;
+          ctx.fillRect(bx, bulletY + bulletH * 0.36, bulletW, bulletH * 0.64);
+          ctx.beginPath();
+          ctx.moveTo(bx, bulletY + bulletH * 0.36);
+          ctx.lineTo(bx + bulletW / 2, bulletY);
+          ctx.lineTo(bx + bulletW, bulletY + bulletH * 0.36);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.fillStyle = '#f1d19c';
+        ctx.font = `bold ${Math.max(6, size * 0.12)}px monospace`;
+        ctx.fillText('AMMO', left + size * 0.16, top + size * 0.58);
       }
     }
   }
