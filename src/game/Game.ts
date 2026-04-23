@@ -88,10 +88,6 @@ export class Game {
     window.addEventListener('keydown', (e) => {
       this.keys[e.key.toLowerCase()] = true;
 
-      if (e.code === 'Space') {
-        if (this.status === 'playing') this.shoot();
-      }
-
       if (e.key === 'Escape') {
         if (this.status === 'playing') this.pause();
         else if (this.status === 'paused') this.resume();
@@ -115,7 +111,20 @@ export class Game {
 
     const canvas = this.engine.getCanvas();
     canvas.addEventListener('click', () => {
-      if (this.status === 'playing') canvas.requestPointerLock?.();
+      if (this.status === 'playing' && document.pointerLockElement !== canvas) {
+        canvas.requestPointerLock?.();
+      }
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      if (this.status !== 'playing') return;
+
+      if (document.pointerLockElement === canvas) {
+        this.shoot();
+      } else {
+        canvas.requestPointerLock?.();
+      }
     });
 
     document.addEventListener('mousemove', (e) => {

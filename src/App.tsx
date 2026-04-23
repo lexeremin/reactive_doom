@@ -35,7 +35,7 @@ function App() {
 
       <div className="overlay top-left">
         <div>REACTIVE DOOM</div>
-        <div className="hint">WASD move, arrows turn, click to lock mouse, space shoots, P or Esc pauses</div>
+        <div className="hint">WASD move, arrows turn, click to lock mouse, left click shoots, P or Esc pauses</div>
       </div>
 
       <div className="overlay top-right">
@@ -70,6 +70,7 @@ function App() {
 
             <div className="menu-help">
               <div>Enter starts a new run</div>
+              <div>Left click shoots when mouse is locked</div>
               <div>P or Esc toggles pause while playing</div>
             </div>
           </div>
