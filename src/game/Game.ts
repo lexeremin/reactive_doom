@@ -101,8 +101,45 @@ export class Game {
     this.weaponKick = 0;
     this.message = '';
     this.messageTimer = 0;
-    this.enemies = level.enemies.map((enemy) => new Enemy(enemy.x, enemy.y, enemy.type));
-    this.pickups = level.pickups.map((pickup) => new Pickup(pickup.x, pickup.y, pickup.type, pickup.amount));
+    const blocked = new Set<string>(level.exitDoors.map((door) => `${door.x},${door.y}`));
+    blocked.add(`${Math.floor(level.start.x)},${Math.floor(level.start.y)}`);
+
+    const freeCells: { x: number; y: number }[] = [];
+    for (let y = 1; y < this.map.length - 1; y++) {
+      for (let x = 1; x < this.map[0].length - 1; x++) {
+        if (this.map[y][x] === 0 && !blocked.has(`${x},${y}`)) freeCells.push({ x, y });
+      }
+    }
+
+    const takeRandomCell = () => {
+      if (!freeCells.length) return { x: 2, y: 2 };
+      const index = Math.floor(Math.random() * freeCells.length);
+      const [cell] = freeCells.splice(index, 1);
+      return cell;
+    };
+
+    this.pickups = [];
+    for (const spec of [
+      { type: 'health' as const, amount: 25 },
+      { type: 'ammo' as const, amount: 24 },
+      { type: 'key' as const, amount: 1 },
+    ]) {
+      const cell = takeRandomCell();
+      this.pickups.push(new Pickup(cell.x + 0.5, cell.y + 0.5, spec.type, spec.amount));
+    }
+
+    if (levelIndex === 0) {
+      this.enemies = level.startEnemies.map((enemy) => new Enemy(enemy.x, enemy.y, enemy.type));
+    } else {
+      const enemyTypes = ['imp', 'soldier', 'demon'] as const;
+      const enemyCount = 2 + Math.floor(Math.random() * 4);
+      this.enemies = [];
+      for (let i = 0; i < enemyCount; i++) {
+        const cell = takeRandomCell();
+        const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+        this.enemies.push(new Enemy(cell.x + 0.5, cell.y + 0.5, type));
+      }
+    }
   }
 
   private emitStateChange() {
