@@ -129,7 +129,7 @@ export class Game {
     }
 
     if (levelIndex === 0) {
-      this.enemies = level.startEnemies.map((enemy) => new Enemy(enemy.x, enemy.y, enemy.type));
+      this.enemies = level.startEnemies.map((enemy) => new Enemy(enemy.x, enemy.y, enemy.type, this.levelIndex + 1));
     } else {
       const enemyTypes = ['imp', 'soldier', 'demon'] as const;
       const enemyCount = 2 + Math.floor(Math.random() * 4);
@@ -137,7 +137,7 @@ export class Game {
       for (let i = 0; i < enemyCount; i++) {
         const cell = takeRandomCell();
         const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
-        this.enemies.push(new Enemy(cell.x + 0.5, cell.y + 0.5, type));
+        this.enemies.push(new Enemy(cell.x + 0.5, cell.y + 0.5, type, this.levelIndex + 1));
       }
     }
   }
@@ -586,7 +586,7 @@ export class Game {
       ctx.fillStyle = '#1a1010';
       ctx.fillRect(left + size * 0.4, top + size * 0.22, size * 0.2, size * 0.05);
 
-      const healthRatio = Math.max(0, sprite.enemy.getHealth()) / (type === 'demon' ? 95 : type === 'soldier' ? 55 : 40);
+      const healthRatio = Math.max(0, sprite.enemy.getHealth()) / sprite.enemy.getMaxHealth();
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.fillRect(left + size * 0.18, top - 8, size * 0.64, 5);
       ctx.fillStyle = type === 'demon' ? '#ff874a' : type === 'soldier' ? '#8fc7ff' : '#ff6b7a';
