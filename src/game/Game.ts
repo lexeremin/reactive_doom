@@ -361,7 +361,7 @@ export class Game {
 
     for (const enemy of this.enemies) {
       const visible = this.hasLineOfSight(enemy.getX(), enemy.getY(), this.player.getX(), this.player.getY());
-      const damage = visible ? enemy.update(dt, this.player.getX(), this.player.getY(), this.map) : 0;
+      const damage = enemy.update(dt, this.player.getX(), this.player.getY(), this.map, visible);
       if (damage > 0) {
         this.player.damage(damage);
         this.sound.play('damage');
