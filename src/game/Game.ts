@@ -53,14 +53,36 @@ export class Game {
       ctx.fillRect(0, 0, 32, 32);
 
       if (mode === 'door') {
-        for (let x = 0; x < 32; x += 8) {
-          ctx.fillStyle = x % 16 === 0 ? dark : base;
-          ctx.fillRect(x, 0, 8, 32);
+        ctx.fillStyle = dark;
+        ctx.fillRect(0, 0, 32, 32);
+
+        ctx.fillStyle = base;
+        ctx.fillRect(3, 2, 26, 28);
+
+        ctx.fillStyle = '#6f4b24';
+        ctx.fillRect(5, 4, 22, 24);
+
+        ctx.fillStyle = '#9f7240';
+        for (let x = 7; x <= 23; x += 4) {
+          ctx.fillRect(x, 5, 2, 22);
         }
+
+        ctx.fillStyle = '#c49a56';
+        ctx.fillRect(6, 6, 20, 3);
+        ctx.fillRect(6, 12, 20, 2);
+        ctx.fillRect(6, 20, 20, 2);
+        ctx.fillRect(6, 25, 20, 2);
+
         ctx.fillStyle = accent;
-        ctx.fillRect(14, 0, 4, 32);
+        ctx.fillRect(14, 4, 4, 24);
+        ctx.fillRect(13, 13, 6, 2);
+
         ctx.fillStyle = '#e5c37a';
-        ctx.fillRect(23, 16, 3, 3);
+        ctx.fillRect(22, 15, 2, 2);
+        ctx.fillRect(22, 18, 2, 2);
+
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.fillRect(5, 27, 22, 2);
       } else {
         for (let y = 0; y < 32; y += 8) {
           for (let x = 0; x < 32; x += 8) {
@@ -368,17 +390,27 @@ export class Game {
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, width, height);
 
-    const sky = ctx.createLinearGradient(0, 0, 0, height / 2);
-    sky.addColorStop(0, '#221a24');
-    sky.addColorStop(1, '#4f394c');
+    const horizon = height / 2;
+    const sky = ctx.createLinearGradient(0, 0, 0, horizon);
+    sky.addColorStop(0, '#170607');
+    sky.addColorStop(0.42, '#5a1214');
+    sky.addColorStop(0.72, '#9a2b16');
+    sky.addColorStop(1, '#da5d1f');
     ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, width, height / 2);
+    ctx.fillRect(0, 0, width, horizon);
 
-    const floor = ctx.createLinearGradient(0, height / 2, 0, height);
+    const skyShift = -((this.player.getAngle() / (Math.PI * 2)) * width * 1.3);
+    ctx.fillStyle = 'rgba(255, 180, 90, 0.14)';
+    ctx.fillRect(skyShift % width - width, height * 0.16, width * 3, height * 0.05);
+    ctx.fillStyle = 'rgba(40, 8, 8, 0.28)';
+    ctx.fillRect((skyShift * 0.7) % width - width, height * 0.22, width * 3, height * 0.06);
+    ctx.fillRect((skyShift * 1.15) % width - width, height * 0.31, width * 3, height * 0.045);
+
+    const floor = ctx.createLinearGradient(0, horizon, 0, height);
     floor.addColorStop(0, '#41352d');
     floor.addColorStop(1, '#161210');
     ctx.fillStyle = floor;
-    ctx.fillRect(0, height / 2, width, height / 2);
+    ctx.fillRect(0, horizon, width, height - horizon);
 
     const fov = Math.PI / 3;
     const rays = Math.min(320, Math.floor(width / 2));
