@@ -7,7 +7,7 @@ import { Pickup } from './pickup';
 import { createLevel, getLevelCount, getMapDimensions } from './map';
 import { SoundSystem } from './sound';
 
-type GameStatus = 'menu' | 'playing' | 'paused' | 'dead' | 'won';
+type GameStatus = 'menu' | 'loading' | 'playing' | 'paused' | 'dead' | 'won';
 type ExitDoor = { x: number; y: number; needsKey: boolean };
 
 export class Game {
@@ -31,6 +31,7 @@ export class Game {
   private sound = new SoundSystem();
   private message = '';
   private messageTimer = 0;
+  private pendingLevelIndex: number | null = null;
 
   constructor(onStateChange?: () => void) {
     this.engine = new GameEngine('gameCanvas');
@@ -182,12 +183,21 @@ export class Game {
       return;
     }
 
-    this.resetWorld(this.levelIndex + 1);
-    this.status = 'playing';
-    this.sound.play('level');
-    this.setMessage(`Level ${this.levelIndex + 1}`, 1.5);
-    this.engine.getCanvas().requestPointerLock?.();
+    this.status = 'loading';
+    this.pendingLevelIndex = this.levelIndex + 1;
+    document.exitPointerLock?.();
     this.emitStateChange();
+
+    window.setTimeout(() => {
+      if (this.pendingLevelIndex == null) return;
+      this.resetWorld(this.pendingLevelIndex);
+      this.pendingLevelIndex = null;
+      this.status = 'playing';
+      this.sound.play('level');
+      this.setMessage(`Level ${this.levelIndex + 1}`, 1.5);
+      this.engine.getCanvas().requestPointerLock?.();
+      this.emitStateChange();
+    }, 220);
   }
 
   private tryUseDoor() {
@@ -286,7 +296,7 @@ export class Game {
   }
 
   pause() {
-    if (this.status === 'menu') return;
+    if (this.status === 'menu' || this.status === 'loading') return;
     this.status = 'paused';
     document.exitPointerLock?.();
     this.emitStateChange();
@@ -426,12 +436,24 @@ export class Game {
       const x = Math.floor((i / rays) * width);
       const colW = Math.ceil(width / rays);
       const top = Math.floor((height - wallHeight) / 2);
-      const textureId = this.map[Math.floor(hit.hitY)]?.[Math.floor(hit.hitX)] || 1;
+      const hitCellX = Math.floor(hit.hitX);
+      const hitCellY = Math.floor(hit.hitY);
+      const textureId = this.map[hitCellY]?.[hitCellX] || 1;
       const texture = this.wallTextures[textureId] || this.wallTextures[1];
-      const hitOffset = hit.side === 0 ? hit.hitY % 1 : hit.hitX % 1;
+      let hitOffset = hit.side === 0 ? hit.hitY % 1 : hit.hitX % 1;
+      if (hitOffset < 0) hitOffset += 1;
       const texX = Math.max(0, Math.min(31, Math.floor(hitOffset * 32)));
 
-      ctx.drawImage(texture, texX, 0, 1, 32, x, top, colW, wallHeight);
+      if (textureId === 4) {
+        const doorInset = Math.max(1, Math.floor(colW * 0.18));
+        const doorWidth = Math.max(1, colW - doorInset * 2);
+        const frameColor = hit.side === 1 ? '#4b2f18' : '#5b3a1d';
+        ctx.fillStyle = frameColor;
+        ctx.fillRect(x, top, colW, wallHeight);
+        ctx.drawImage(texture, texX, 0, 1, 32, x + doorInset, top, doorWidth, wallHeight);
+      } else {
+        ctx.drawImage(texture, texX, 0, 1, 32, x, top, colW, wallHeight);
+      }
 
       const shade = Math.min(0.72, corrected / 14) + (hit.side === 1 ? 0.12 : 0);
       ctx.fillStyle = `rgba(0,0,0,${shade})`;

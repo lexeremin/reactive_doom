@@ -6,7 +6,7 @@ type UiState = {
   ammo: number;
   maxAmmo: number;
   score: number;
-  status: 'menu' | 'playing' | 'paused' | 'dead' | 'won';
+  status: 'menu' | 'loading' | 'playing' | 'paused' | 'dead' | 'won';
   hasKey: boolean;
   message: string;
   level: number;
@@ -36,6 +36,7 @@ function App() {
 
   const titleByState = {
     menu: 'REACTIVE DOOM',
+    loading: 'DESCENDING',
     paused: 'PAUSED',
     dead: 'YOU DIED',
     won: 'LEVELS CLEARED',
@@ -44,6 +45,7 @@ function App() {
 
   const copyByState = {
     menu: 'A compact retro shooter prototype. Push through the exits and survive.',
+    loading: 'Generating the next floor.',
     paused: 'Take a breath, then jump back in.',
     dead: 'You got chewed up. Restart and try a tighter route.',
     won: 'You cleared the current build. Nice work.',
