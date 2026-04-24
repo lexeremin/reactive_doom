@@ -125,7 +125,13 @@ export class Game {
     this.message = '';
     this.messageTimer = 0;
     const blocked = new Set<string>(level.exitDoors.map((door) => `${door.x},${door.y}`));
-    blocked.add(`${Math.floor(level.start.x)},${Math.floor(level.start.y)}`);
+    const startCellX = Math.floor(level.start.x);
+    const startCellY = Math.floor(level.start.y);
+    for (let y = startCellY - 3; y <= startCellY + 3; y++) {
+      for (let x = startCellX - 3; x <= startCellX + 3; x++) {
+        blocked.add(`${x},${y}`);
+      }
+    }
 
     const freeCells: { x: number; y: number }[] = [];
     for (let y = 1; y < this.map.length - 1; y++) {

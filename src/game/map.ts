@@ -115,6 +115,13 @@ function generateProceduralLevel(index: number): LevelData {
   const rooms: Room[] = [];
   const roomCount = 5 + Math.min(5, Math.floor((index - 2) / 6));
 
+  const entranceRoom = { x: 2, y: Math.floor(height / 2) - 3, w: 5, h: 6, cx: 4, cy: Math.floor(height / 2) };
+  for (let y = entranceRoom.y; y < entranceRoom.y + entranceRoom.h; y++) {
+    for (let x = entranceRoom.x; x < entranceRoom.x + entranceRoom.w; x++) {
+      map[y][x] = 0;
+    }
+  }
+
   const exitRoom = { x: width - 7, y: Math.floor(height / 2) - 3, w: 5, h: 6 };
   for (let y = exitRoom.y; y < exitRoom.y + exitRoom.h; y++) {
     for (let x = exitRoom.x; x < exitRoom.x + exitRoom.w; x++) {
@@ -128,7 +135,7 @@ function generateProceduralLevel(index: number): LevelData {
   for (let attempts = 0; attempts < 100 && rooms.length < roomCount; attempts++) {
     const w = 4 + Math.floor(Math.random() * 5);
     const h = 4 + Math.floor(Math.random() * 5);
-    const x = 1 + Math.floor(Math.random() * (width - w - 10));
+    const x = entranceRoom.x + entranceRoom.w + 1 + Math.floor(Math.random() * (width - w - entranceRoom.w - 9));
     const y = 1 + Math.floor(Math.random() * (height - h - 2));
     const room: Room = { x, y, w, h, cx: x + Math.floor(w / 2), cy: y + Math.floor(h / 2) };
 
@@ -151,12 +158,16 @@ function generateProceduralLevel(index: number): LevelData {
 
   if (rooms.length < 2) return cloneLevel(FIXED_LEVELS[1]);
 
+  const firstRoom = rooms[0];
+  carveHCorridor(map, entranceRoom.x + entranceRoom.w - 1, firstRoom.cx, entranceRoom.cy);
+  carveVCorridor(map, entranceRoom.cy, firstRoom.cy, firstRoom.cx);
+
   const lastRoom = rooms[rooms.length - 1];
   carveHCorridor(map, lastRoom.cx, exitRoom.x, lastRoom.cy);
   carveVCorridor(map, lastRoom.cy, exitRoom.y + Math.floor(exitRoom.h / 2), exitRoom.x);
 
   return {
-    start: { x: rooms[0].cx + 0.5, y: rooms[0].cy + 0.5, angle: 0 },
+    start: { x: entranceRoom.cx + 0.5, y: entranceRoom.cy + 0.5, angle: 0 },
     map,
     startEnemies: [],
     exitDoors: [{ x: gateX, y: gateY, needsKey: true }],
