@@ -32,6 +32,8 @@ export class Game {
   private message = '';
   private messageTimer = 0;
   private pendingLevelIndex: number | null = null;
+  private carryHealth: number | null = null;
+  private carryAmmo: number | null = null;
 
   constructor(onStateChange?: () => void) {
     this.engine = new GameEngine('gameCanvas');
@@ -120,6 +122,8 @@ export class Game {
     this.raycaster = new Raycaster(this.map, getMapDimensions(this.map).width, getMapDimensions(this.map).height);
     this.player = new Player(level.start.x, level.start.y, level.start.angle);
     this.weapon = new Weapon();
+    if (this.carryHealth !== null) this.player.setHealth(this.carryHealth);
+    if (this.carryAmmo !== null) this.weapon.setAmmo(this.carryAmmo);
     this.lastShotFlash = 0;
     this.weaponKick = 0;
     this.message = '';
@@ -191,6 +195,8 @@ export class Game {
 
     this.status = 'loading';
     this.pendingLevelIndex = this.levelIndex + 1;
+    this.carryHealth = this.player.getHealth();
+    this.carryAmmo = this.weapon.getAmmo();
     document.exitPointerLock?.();
     this.emitStateChange();
 
@@ -294,6 +300,8 @@ export class Game {
 
   startNewGame() {
     this.score = 0;
+    this.carryHealth = null;
+    this.carryAmmo = null;
     this.resetWorld(0);
     this.status = 'playing';
     this.setMessage('Level 1', 1.5);

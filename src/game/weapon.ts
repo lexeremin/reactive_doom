@@ -22,6 +22,10 @@ export class Weapon {
     return this.ammo - before;
   }
 
+  setAmmo(value: number) {
+    this.ammo = Math.max(0, Math.min(this.maxAmmo, value));
+  }
+
   getDamage() { return this.damage; }
   getAmmo() { return this.ammo; }
   getMaxAmmo() { return this.maxAmmo; }

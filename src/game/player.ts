@@ -86,6 +86,10 @@ export class Player {
     this.health = Math.min(100, this.health + amount);
   }
 
+  setHealth(value: number) {
+    this.health = Math.max(0, Math.min(100, value));
+  }
+
   giveKey() {
     this.hasKey = true;
   }
@@ -94,6 +98,10 @@ export class Player {
     if (!this.hasKey) return false;
     this.hasKey = false;
     return true;
+  }
+
+  setHasKey(value: boolean) {
+    this.hasKey = value;
   }
 
   getHasKey() { return this.hasKey; }
