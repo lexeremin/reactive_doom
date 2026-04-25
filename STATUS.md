@@ -77,19 +77,19 @@ Current limitations include:
 This should be done in a few safe steps instead of one big jump.
 
 ## Procedural generation TODO breakdown
-- [ ] step 1: refactor map system so fixed levels 1 and 2 can coexist cleanly with generated levels
-- [ ] step 2: add a simple procedural map generator for level 3+ that creates walkable room/corridor layouts
-- [ ] step 3: guarantee generated maps always have a valid path from spawn to key to exit
-- [ ] step 4: place one random health pickup, one random ammo pickup, and one random key pickup on generated maps
-- [ ] step 5: spawn enemies randomly on generated maps with safe spawn distance from player
-- [ ] step 6: add difficulty scaling for generated levels from 3 to 100
-- [ ] step 7: set max level to 100 and make exit progression continue through generated maps
+- [x] step 1: refactor map system so fixed levels 1 and 2 can coexist cleanly with generated levels
+- [x] step 2: add a simple procedural map generator for level 3+ that creates walkable room/corridor layouts
+- [x] step 3: guarantee generated maps always have a valid path from spawn to key to exit
+- [x] step 4: place one random health pickup, one random ammo pickup, and one random key pickup on generated maps
+- [x] step 5: spawn enemies randomly on generated maps with safe spawn distance from player
+- [x] step 6: add difficulty scaling for generated levels from 3 to 100
+- [x] step 7: set max level to 100 and make exit progression continue through generated maps
 - [ ] step 8: test for broken maps, softlocks, unreachable exits, and impossible starts
 
 ## Working TODO
-- [ ] procedural level generation from level 3 onward
-- [ ] guaranteed valid route from spawn to key to exit on generated maps
-- [ ] difficulty scaling through level 100
+- [x] procedural level generation from level 3 onward
+- [x] guaranteed valid route from spawn to key to exit on generated maps
+- [x] difficulty scaling through level 100
 - [ ] add minimap debug toggle
 - [ ] add sensitivity setting
 - [ ] add mobile movement controls
